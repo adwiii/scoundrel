@@ -14,6 +14,7 @@ export interface Card {
     suit: Suit
 }
 const CARD_BASE = 0x1F0A0;
+const SHIELD = String.fromCodePoint(0x1F6E1);
 
 function blackSuit(suit : Suit) {
     return suit == Suit.SPADE || suit == Suit.CLUB;
@@ -72,6 +73,7 @@ export default function Dungeon() {
     const [ranLastRoom, setRanLastRoom] = useState<boolean>(false);
     const [potionThisRoom, setPotionThisRoom] = useState<boolean>(false);
     const [best, setBest] = useState<number>(44);
+    const [weaponEquipped, setWeaponEquipped] = useState<boolean>(false);
     const [winning, setWinning] = useState<boolean>(false);
     const [losing, setLosing] = useState<boolean>(false);
     const roomRemaining = room.filter(x => x !== undefined);
@@ -118,6 +120,7 @@ export default function Dungeon() {
             setLastDefeated(undefined);
             setWinning(false);
             setLosing(false);
+            setWeaponEquipped(false);
         } else {
             if (numInRoom == 4) {
                 newRoom(deck, room);
@@ -158,10 +161,14 @@ export default function Dungeon() {
             }
         }
         if (blackSuit(room[index].suit)) {
-            const functionalDamage = getFunctionalDamage(room[index].face);
-            newHealth -= functionalDamage.damage;
-            if (functionalDamage.blocked) {
-                newLastDefeated = room[index];
+            if (weaponEquipped) {
+                const functionalDamage = getFunctionalDamage(room[index].face);
+                newHealth -= functionalDamage.damage;
+                if (functionalDamage.blocked) {
+                    newLastDefeated = room[index];
+                }
+            } else {
+                newHealth -= room[index].face;
             }
         }
         if (room[index].suit === Suit.DIAMOND) {
@@ -197,7 +204,8 @@ export default function Dungeon() {
             case Suit.CLUB:
                 type = 'Monster';
                 const functionalDamage = getFunctionalDamage(card.face);
-                extra = `(${-1*functionalDamage.damage})`
+                const damage = weaponEquipped ? functionalDamage.damage : card.face;
+                extra = `(${-1*damage}${weaponEquipped && functionalDamage.blocked ? SHIELD : ''})`
                 break;
             case Suit.DIAMOND: type = 'Weapon'; break;
             case Suit.HEART:
@@ -234,8 +242,15 @@ export default function Dungeon() {
             <td></td>
         </tr>
         <tr><td></td>
-            <td><Button>{renderCard(currentWeapon)}</Button></td>
+            <td><Button className={weaponEquipped ? "activeWeapon" : ""} onClick={() => setWeaponEquipped(!weaponEquipped && currentWeapon !== undefined)}>{renderCard(currentWeapon)}</Button></td>
             <td><Button>{renderCard(lastDefeated)}</Button></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr><td></td>
+            <td>{weaponEquipped ? "Equipped!" : "Click to equip"}</td>
+            <td></td>
             <td></td>
             <td></td>
             <td></td>
